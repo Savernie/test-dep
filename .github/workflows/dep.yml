@@ -1,0 +1,46 @@
+name: test deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Generate Coverage Report
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.os }}
+    environment:
+      name: code-coverage-report
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        if: ${{ !cancelled() }}
+        uses: actions/configure-pages@v5
+        
+      - name: Upload coverage HTML report to pages
+        if: ${{ !cancelled() }}
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: coverage/html
+
+      - name: Deploy to GitHub Pages
+        if: ${{ !cancelled() }}
+        id: deployment
+        uses: actions/deploy-pages@v2
+
